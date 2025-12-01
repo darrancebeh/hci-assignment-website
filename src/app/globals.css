@@ -7,3 +7,14 @@
   --color-medical-600: #0284c7;
   --color-medical-900: #0c4a6e;
 }
+
+@theme {
+  --color-medical-50: #f0f9ff;
+  --color-medical-600: #0284c7; /* Sky 600 */
+  --color-medical-700: #0369a1; /* Sky 700 */
+  --animate-progress: progress 2s ease-in-out;
+}
+@keyframes progress {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
