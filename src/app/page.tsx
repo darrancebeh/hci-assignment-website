@@ -4,10 +4,19 @@ import {
   UserGroupIcon, 
   ChartBarIcon, 
   ShieldCheckIcon, 
-  ArrowRightIcon 
+  ArrowRightIcon,
+  UserCircleIcon
 } from "@heroicons/react/24/outline";
 
 export default function LandingPage() {
+  
+  const teamMembers = [
+    { name: "Darrance Beh Heng Shek", id: "23094907", initials: "DB" },
+    { name: "Chua Kay Chun", id: "23046782", initials: "CK" },
+    { name: "Ng Wei Quan", id: "22062616", initials: "NW" },
+    { name: "Chai Yi Xiang", id: "22042493", initials: "CY" },
+  ];
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-medical-500 selection:text-white">
       
@@ -45,7 +54,7 @@ export default function LandingPage() {
       </nav>
 
       {/* --- Hero Section --- */}
-      <section className="relative overflow-hidden bg-white pt-16 pb-20 lg:pt-24 lg:pb-28">
+      <section className="relative overflow-hidden bg-white pt-16 pb-12 lg:pt-24 lg:pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <span className="inline-flex items-center rounded-full bg-medical-50 px-3 py-1 text-sm font-medium text-medical-600 ring-1 ring-inset ring-medical-500/10 mb-6">
             HCI Project 2025
@@ -83,8 +92,34 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* --- Team Section --- */}
+      <section className="py-12 bg-slate-50 border-y border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
+            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Project Team</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            {teamMembers.map((member, index) => (
+              <div 
+                key={index} 
+                className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex-shrink-0 w-12 h-12 bg-medical-50 rounded-full flex items-center justify-center text-medical-700 font-bold border border-medical-100">
+                  {member.initials}
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">{member.name}</h3>
+                  <p className="text-xs text-slate-500 font-mono">ID: {member.id}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* --- The Problem Section --- */}
-      <section id="problem" className="py-20 bg-slate-50 border-y border-slate-200">
+      <section id="problem" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
@@ -111,15 +146,15 @@ export default function LandingPage() {
               </ul>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+              <div className="bg-slate-50 p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div className="text-4xl font-bold text-medical-600 mb-2">High</div>
                 <div className="text-sm text-slate-500">Incidence of hand/wrist pain in surgeons</div>
               </div>
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mt-8">
+              <div className="bg-slate-50 p-6 rounded-2xl shadow-sm border border-slate-100 mt-8">
                 <div className="text-4xl font-bold text-teal-600 mb-2">Ergo</div>
                 <div className="text-sm text-slate-500">Issues caused by inadequate design</div>
               </div>
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+              <div className="bg-slate-50 p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div className="text-4xl font-bold text-slate-800 mb-2">AI</div>
                 <div className="text-sm text-slate-500">Analysis needed to prevent strain</div>
               </div>
@@ -129,7 +164,7 @@ export default function LandingPage() {
       </section>
 
       {/* --- The Solution Section --- */}
-      <section id="solution" className="py-24 bg-white">
+      <section id="solution" className="py-24 bg-slate-50 border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-16">
           <h2 className="text-3xl font-bold text-slate-900">AI-Driven Simulation & Analysis</h2>
           <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
@@ -158,7 +193,7 @@ export default function LandingPage() {
               color: "bg-indigo-500"
             }
           ].map((feature, idx) => (
-            <div key={idx} className="group relative bg-slate-50 rounded-2xl p-8 hover:shadow-xl transition-all duration-300 border border-slate-100 hover:-translate-y-1">
+            <div key={idx} className="group relative bg-white rounded-2xl p-8 hover:shadow-xl transition-all duration-300 border border-slate-100 hover:-translate-y-1">
               <div className={`w-14 h-14 ${feature.color} rounded-xl flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform`}>
                 {feature.icon}
               </div>
@@ -240,7 +275,7 @@ export default function LandingPage() {
             <p className="text-sm text-slate-500">Human Computer Interaction • Semester 1, 2025</p>
           </div>
           <div className="flex gap-6 text-slate-400 text-sm">
-            <span>© Student Name</span>
+            <span>© ErgoSurgAI Team</span>
             <span>University Name</span>
           </div>
         </div>
