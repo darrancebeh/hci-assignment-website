@@ -156,7 +156,9 @@ export default function PrototypePage() {
       
       {/* --- SIDEBAR --- */}
       <aside className="w-16 bg-slate-900 flex flex-col items-center py-6 gap-6 z-20 shadow-xl">
-        <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-indigo-900/50">ES</div>
+        <a href="/" className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-indigo-900/50 hover:bg-indigo-700 transition-colors cursor-pointer">
+          ES
+        </a>
         <nav className="flex flex-col gap-4 w-full">
           <NavIcon icon={<HomeIcon/>} active={currentView === "dashboard"} onClick={() => setCurrentView("dashboard")} />
           <NavIcon icon={<CloudArrowUpIcon/>} active={currentView === "upload"} onClick={() => setCurrentView("upload")} />
