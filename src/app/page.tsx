@@ -57,7 +57,7 @@ export default function LandingPage() {
       <section className="relative overflow-hidden bg-white pt-16 pb-12 lg:pt-24 lg:pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <span className="inline-flex items-center rounded-full bg-medical-50 px-3 py-1 text-sm font-medium text-medical-600 ring-1 ring-inset ring-medical-500/10 mb-6">
-            HCI Project 2025
+            HCI Practical Group 10 | Group 4
           </span>
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-6 max-w-4xl mx-auto">
             Refining Surgical Instruments with <br className="hidden md:block"/>
@@ -271,12 +271,12 @@ export default function LandingPage() {
       <footer className="bg-slate-50 py-12 border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-center md:text-left">
-            <p className="font-bold text-slate-900">HCI Subject Project</p>
-            <p className="text-sm text-slate-500">Human Computer Interaction • Semester 1, 2025</p>
+            <p className="font-bold text-slate-900">Practical Group 10 | Group 4</p>
+            <p className="text-sm text-slate-500">Human Computer Interaction Assignment</p>
           </div>
           <div className="flex gap-6 text-slate-400 text-sm">
             <span>© ErgoSurgAI Team</span>
-            <span>University Name</span>
+            <span>Sunway University</span>
           </div>
         </div>
       </footer>
