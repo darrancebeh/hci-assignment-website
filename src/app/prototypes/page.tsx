@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { 
   CloudArrowUpIcon, 
   CpuChipIcon, 
@@ -131,11 +132,15 @@ export default function PrototypePage() {
       {/* --- SIDEBAR (Sketch 1) --- */}
       <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0 z-20">
         <div className="h-16 flex items-center px-6 border-b border-slate-100">
-          <span className="font-bold text-lg tracking-tight text-slate-800">
+          <Link href="/" className="font-bold text-lg tracking-tight text-slate-800 hover:text-sky-600 transition-colors">
             ErgoSurg<span className="text-sky-600">AI</span> Hub
-          </span>
+          </Link>
         </div>
         <nav className="p-4 space-y-2 flex-1">
+          <Link href="/" className="w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors text-slate-500 hover:text-slate-900 border-b border-slate-100 mb-2 pb-3">
+            <HomeIcon className="w-5 h-5"/>
+            <span>← Back to Main Site</span>
+          </Link>
           <SidebarItem active={currentView === "dashboard"} icon={<HomeIcon className="w-5 h-5"/>} label="Dashboard" onClick={() => setCurrentView("dashboard")}/>
           <SidebarItem active={currentView === "upload"} icon={<CloudArrowUpIcon className="w-5 h-5"/>} label="Upload Model" onClick={() => setCurrentView("upload")}/>
           <SidebarItem active={currentView === "simulate"} icon={<CpuChipIcon className="w-5 h-5"/>} label="Simulate & Review" onClick={() => setCurrentView("simulate")}/>
