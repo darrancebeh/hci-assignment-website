@@ -1,525 +1,536 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useMemo } from "react";
 import { 
   CloudArrowUpIcon, 
   CpuChipIcon, 
   DocumentTextIcon, 
   HomeIcon, 
   BeakerIcon,
-  CheckCircleIcon,
-  AdjustmentsHorizontalIcon,
   ChartBarIcon,
-  Square3Stack3DIcon,
+  XMarkIcon,
+  InformationCircleIcon,
   HandRaisedIcon,
-  ChevronDownIcon,
-  PlusIcon,
-  ArrowDownTrayIcon,
-  ArrowsRightLeftIcon,
-  ClockIcon,
-  CommandLineIcon,
-  XMarkIcon
+  CheckCircleIcon
 } from "@heroicons/react/24/outline";
 
 // --- Data Models ---
 interface SimParams {
   dia: number;
   curve: number;
-  length: number;
-  gripForce: number;
-  material: string;
+  gripType: "Power" | "Pinch";
+  handSize: "S" | "M" | "L";
+  position: "Standing" | "Seated";
+  orientation: "Left" | "Right";
 }
 
 interface Metrics {
   comfort: number;
   precision: number;
   stability: number;
-  pressure: number;
-  score: number;
+  pressure: number; // kPa
+  score: number; // 0-100
 }
-
-const MATERIALS = {
-  "steel": { name: "Stainless Steel 316L", friction: 0.4, density: 7.8 },
-  "polymer": { name: "Medical PEEK", friction: 0.7, density: 1.3 },
-  "silicone": { name: "Silicone Overmold", friction: 0.9, density: 1.1 }
-};
 
 export default function PrototypePage() {
   // --- Global State ---
   const [currentView, setCurrentView] = useState<"dashboard" | "upload" | "simulate" | "report">("dashboard");
-  const [activeProject, setActiveProject] = useState("New Analysis");
+  const [activeProject, setActiveProject] = useState("New Project 3");
   const [consoleLogs, setConsoleLogs] = useState<string[]>([]);
   
-  // --- Simulation State ---
-  const [params, setParams] = useState<SimParams>({ dia: 12, curve: 0, length: 120, gripForce: 45, material: "steel" });
-  const [baseline, setBaseline] = useState<SimParams>({ dia: 12, curve: 0, length: 120, gripForce: 45, material: "steel" }); // For comparison
-  const [handSize, setHandSize] = useState<"S"|"M"|"L">("M");
-  
-  // --- UI Toggles ---
-  const [isComparing, setIsComparing] = useState(false);
-  const [isDynamic, setIsDynamic] = useState(false);
-  const logEndRef = useRef<HTMLDivElement>(null);
+  // --- Simulation Parameters (Default: Sub-optimal "Bad" Design) ---
+  const [params, setParams] = useState<SimParams>({ 
+    dia: 14, 
+    curve: 0, 
+    gripType: "Power", 
+    handSize: "M", 
+    position: "Standing", 
+    orientation: "Right" 
+  });
 
-  // --- Computed Metrics ---
-  const [metrics, setMetrics] = useState<Metrics>({ comfort: 0, precision: 0, stability: 0, pressure: 0, score: 0 });
+  // --- System State ---
+  const [simStatus, setSimStatus] = useState<"idle" | "loading" | "complete">("idle");
+  const [showCompare, setShowCompare] = useState(false);
 
-  // --- SYSTEM LOGGING ---
+  // --- LOGGING SYSTEM ---
   const log = (msg: string) => {
     const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' });
-    setConsoleLogs(prev => [...prev.slice(-8), `[${time}] ${msg}`]);
+    setConsoleLogs(prev => [...prev.slice(-3), `[${time}] ${msg}`]);
   };
 
-  // Scroll log to bottom
-  useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [consoleLogs]);
+  // --- PHYSICS ENGINE (Real-Time Logic) ---
+  const metrics = useMemo<Metrics>(() => {
+    // 1. Define Anthropometric Baseline
+    let idealDia = params.handSize === "S" ? 28 : params.handSize === "M" ? 33 : 38;
+    if (params.gripType === "Pinch") idealDia = 12; 
 
-  // --- PHYSICS ENGINE ---
-  useEffect(() => {
-    const idealDia = handSize === "S" ? 25 : handSize === "M" ? 30 : 35;
+    // 2. Calculate Deviation
     const diaDiff = Math.abs(params.dia - idealDia);
     
-    // Comfort (Penalize small diameters heavily)
+    // 3. Compute Core Metrics
+    // Comfort: Penalize size deviation & bad wrist angles
     let comfort = 100 - (diaDiff * 4);
-    if (params.material === "silicone") comfort += 15;
-    if (params.curve > 8) comfort += 10;
+    if (params.curve >= 5 && params.curve <= 15) comfort += 15; // Neutral zone bonus
+    if (params.position === "Seated" && params.curve > 20) comfort -= 15; // Awkward seated angle
     
-    // Precision (Steel is stable, short is precise)
-    let precision = 90 - (params.dia * 1.5);
-    if (params.material === "steel") precision += 10;
-    if (params.length > 140) precision -= 15;
+    // Precision: Inverse of diameter (thinner = more control)
+    let precision = 90 - (params.dia * 1.2);
+    if (params.gripType === "Pinch") precision += 20;
+    if (params.dia < 8) precision -= 30; // Too thin to hold
 
-    // Stability (Thick is stable)
-    let stability = (params.dia * 2) + (params.gripForce / 3);
-    
-    // Pressure Calculation (kPa)
-    const area = params.dia * 3.14 * (params.length * 0.4);
-    const pressure = Math.floor((params.gripForce * 900) / (area || 1));
+    // Stability: Proportional to diameter (thicker = more contact)
+    let stability = (params.dia * 2.5);
+    if (params.gripType === "Power") stability += 15;
 
-    setMetrics({
-      comfort: Math.max(0, Math.min(100, comfort)),
-      precision: Math.max(0, Math.min(100, precision)),
-      stability: Math.max(0, Math.min(100, stability)),
-      pressure,
-      score: Math.floor((comfort + precision + stability) / 3)
-    });
+    // Pressure: Force / Area proxy (High pressure = Pain)
+    const pressure = Math.floor(1200 / (params.dia + 2)); 
 
-  }, [params, handSize]);
+    const clamp = (n: number) => Math.max(0, Math.min(100, n));
+
+    return {
+      comfort: clamp(comfort),
+      precision: clamp(precision),
+      stability: clamp(stability),
+      pressure: pressure,
+      score: clamp((comfort + precision + stability) / 3)
+    };
+  }, [params]);
+
+  // --- VISUALIZATION HELPERS ---
+  const getHeatColor = (p: number) => {
+    // Continuous Gradient: Green -> Yellow -> Red
+    if (p < 40) return "#22c55e"; // Green
+    if (p < 80) return "#eab308"; // Yellow
+    return "#ef4444"; // Red
+  };
+
+  const getHeatOpacity = (p: number) => {
+    // Higher pressure = More opaque
+    return Math.min(0.8, 0.2 + (p / 200));
+  };
 
   // --- ACTIONS ---
-
-  const handleUploadSequence = () => {
-    // Fake parsing
-    log("Initiating upload sequence...");
-    setTimeout(() => log("Reading .STL binary stream..."), 800);
-    setTimeout(() => log("Verifying mesh integrity... OK"), 1600);
+  const handleRunSimulation = () => {
+    setSimStatus("loading");
+    log("Initializing Biomechanical Solver...");
     setTimeout(() => {
-      log("Geometry parsed. Project loaded.");
-      setActiveProject("Laparoscopic_Grasper_v3.stl");
-      // Set a "bad" initial state for the user to fix
-      const badState = { dia: 10, curve: 0, length: 150, gripForce: 60, material: "steel" };
-      setParams(badState);
-      setBaseline(badState);
-      setCurrentView("simulate");
-    }, 2500);
+      setSimStatus("complete");
+      log("Analysis Complete. Matrix Updated.");
+    }, 1500);
   };
 
-  const runAISolver = (strategy: "balanced" | "precision") => {
-    log(`AI Solver: Optimizing for ${strategy.toUpperCase()}...`);
-    
-    const targetDia = handSize === "S" ? 24 : handSize === "M" ? 29 : 34;
-    const targetCurve = strategy === "balanced" ? 15 : 5;
-    
-    let steps = 0;
-    const interval = setInterval(() => {
-      steps++;
-      setParams(prev => ({
-        ...prev,
-        dia: lerp(prev.dia, targetDia, 0.2),
-        curve: lerp(prev.curve, targetCurve, 0.1),
-        length: lerp(prev.length, 120, 0.1) // Optimize length too
-      }));
-
-      if (steps > 25) {
-        clearInterval(interval);
-        // Final tweak
-        setParams(prev => ({ ...prev, material: strategy === "balanced" ? "silicone" : "steel" }));
-        log(`Optimization converged. Material set to ${strategy === "balanced" ? "Silicone" : "Steel"}.`);
-      }
-    }, 40);
+  const applyAI = (target: "dia" | "curve" | "all") => {
+    log("AI: Optimizing parameters for bio-fit...");
+    if (target === "dia" || target === "all") setParams(p => ({ ...p, dia: 32 }));
+    if (target === "curve" || target === "all") setParams(p => ({ ...p, curve: 10 }));
   };
-
-  const lerp = (start: number, end: number, amt: number) => (1 - amt) * start + amt * end;
 
   return (
-    <div className="flex h-screen bg-slate-100 font-sans text-slate-900 overflow-hidden select-none">
+    <div className="flex h-screen bg-white font-sans text-slate-900 overflow-hidden select-none">
       
-      {/* --- SIDEBAR --- */}
-      <aside className="w-16 bg-slate-900 flex flex-col items-center py-6 gap-6 z-20 shadow-xl">
-        <a href="/" className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-indigo-900/50 hover:bg-indigo-700 transition-colors cursor-pointer">
-          ES
-        </a>
-        <nav className="flex flex-col gap-4 w-full">
-          <NavIcon icon={<HomeIcon/>} active={currentView === "dashboard"} onClick={() => setCurrentView("dashboard")} />
-          <NavIcon icon={<CloudArrowUpIcon/>} active={currentView === "upload"} onClick={() => setCurrentView("upload")} />
-          <NavIcon icon={<CpuChipIcon/>} active={currentView === "simulate"} onClick={() => setCurrentView("simulate")} />
-          <NavIcon icon={<DocumentTextIcon/>} active={currentView === "report"} onClick={() => setCurrentView("report")} />
+      {/* --- SIDEBAR (Sketch 1) --- */}
+      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0 z-20">
+        <div className="h-16 flex items-center px-6 border-b border-slate-100">
+          <span className="font-bold text-lg tracking-tight text-slate-800">
+            ErgoSurg<span className="text-sky-600">AI</span> Hub
+          </span>
+        </div>
+        <nav className="p-4 space-y-2 flex-1">
+          <SidebarItem active={currentView === "dashboard"} icon={<HomeIcon className="w-5 h-5"/>} label="Dashboard" onClick={() => setCurrentView("dashboard")}/>
+          <SidebarItem active={currentView === "upload"} icon={<CloudArrowUpIcon className="w-5 h-5"/>} label="Upload Model" onClick={() => setCurrentView("upload")}/>
+          <SidebarItem active={currentView === "simulate"} icon={<CpuChipIcon className="w-5 h-5"/>} label="Simulate & Review" onClick={() => setCurrentView("simulate")}/>
+          <SidebarItem active={currentView === "report"} icon={<DocumentTextIcon className="w-5 h-5"/>} label="Report" onClick={() => setCurrentView("report")}/>
         </nav>
-        <div className="mt-auto mb-2 opacity-50 hover:opacity-100 cursor-pointer">
-           <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] text-slate-300">ID</div>
+        {/* Research Note */}
+        <div className="p-6 bg-slate-50 border-t border-slate-200 text-xs text-slate-500">
+          <strong className="block text-slate-700 mb-2 uppercase">Research-backed rationale</strong>
+          <ul className="list-disc pl-4 space-y-1">
+            <li>Test ergonomics early on digital models</li>
+            <li>Real-time Matrix Visualization</li>
+            <li>Actionable parameter recommendations</li>
+          </ul>
         </div>
       </aside>
 
-      {/* --- MAIN AREA --- */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      {/* --- MAIN CONTENT --- */}
+      <main className="flex-1 flex flex-col overflow-hidden bg-white relative">
         
         {/* === DASHBOARD === */}
         {currentView === "dashboard" && (
-          <div className="flex-1 p-10 overflow-y-auto bg-slate-50 animate-in fade-in">
-             <header className="mb-10">
-               <h1 className="text-3xl font-bold text-slate-900">Engineering Dashboard</h1>
-               <p className="text-slate-500">Welcome back, Lead Designer.</p>
-             </header>
-
-             <div className="grid grid-cols-4 gap-6 mb-10">
-                <StatCard label="Analyses Run" value="128" icon={<ClockIcon className="text-blue-500"/>} />
-                <StatCard label="Avg Score" value="84%" icon={<ChartBarIcon className="text-green-500"/>} />
-                <button onClick={() => setCurrentView("upload")} className="col-span-1 border-2 border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center text-slate-400 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 transition bg-white h-32">
-                   <PlusIcon className="w-8 h-8 mb-2"/>
-                   <span className="font-bold text-sm">New Analysis</span>
-                </button>
+          <div className="p-10 max-w-6xl mx-auto w-full animate-in fade-in">
+             <div className="flex justify-between items-center mb-8">
+               <h1 className="text-3xl font-light text-slate-800">Projects</h1>
+               <button onClick={() => setCurrentView("upload")} className="border border-slate-300 px-4 py-2 rounded shadow-sm hover:bg-slate-50">+ New Project</button>
              </div>
-
-             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-               <div className="p-4 border-b border-slate-100 font-bold text-slate-700">Recent Projects</div>
-               <table className="w-full text-sm text-left">
-                 <thead className="bg-slate-50 text-slate-500">
-                   <tr><th className="p-4">Project</th><th className="p-4">Material</th><th className="p-4">Risk</th><th className="p-4">Actions</th></tr>
-                 </thead>
-                 <tbody className="divide-y divide-slate-100">
-                   <tr className="hover:bg-slate-50 transition cursor-pointer" onClick={() => { setActiveProject("Endo-Grasper V1"); setCurrentView("simulate"); log("Project Endo-Grasper V1 loaded."); }}>
-                     <td className="p-4 font-medium">Endo-Grasper V1</td>
-                     <td className="p-4 text-slate-500">Steel</td>
-                     <td className="p-4 text-red-500 font-bold">High (42/100)</td>
-                     <td className="p-4 text-indigo-600">Open</td>
-                   </tr>
-                   <tr className="hover:bg-slate-50 transition cursor-pointer" onClick={() => { setActiveProject("Forceps Pro X"); setCurrentView("simulate"); log("Project Forceps Pro X loaded."); }}>
-                     <td className="p-4 font-medium">Forceps Pro X</td>
-                     <td className="p-4 text-slate-500">Silicone</td>
-                     <td className="p-4 text-green-500 font-bold">Low (92/100)</td>
-                     <td className="p-4 text-indigo-600">Open</td>
-                   </tr>
-                 </tbody>
-               </table>
+             <div className="grid md:grid-cols-2 gap-8">
+                <ProjectCard name="Laparoscopic Grasper" date="21 Sept 2025" risk="Medium" issue="Handle design flaw, poor force transmission" onClick={() => setCurrentView("simulate")}/>
+                <ProjectCard name="Endoscopic Scissors" date="27 Sept 2025" risk="Low" issue="Front-heavy balance, loop discomfort" onClick={() => setCurrentView("simulate")}/>
              </div>
           </div>
         )}
 
         {/* === UPLOAD === */}
         {currentView === "upload" && (
-          <div className="flex-1 flex items-center justify-center bg-slate-100 animate-in zoom-in-95">
-             <div className="bg-white p-12 rounded-2xl shadow-xl border border-slate-200 text-center max-w-lg w-full">
-                <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <CloudArrowUpIcon className="w-8 h-8"/>
-                </div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Import Geometry</h2>
-                <p className="text-slate-500 mb-8 text-sm">Supports .STEP, .STL, .OBJ (Max 50MB)</p>
-                
-                <div 
-                  onClick={handleUploadSequence}
-                  className="border-2 border-dashed border-slate-300 rounded-xl p-8 hover:border-indigo-500 hover:bg-indigo-50 cursor-pointer transition group"
-                >
-                  <p className="text-slate-600 font-medium group-hover:text-indigo-700">Click to Select File</p>
-                </div>
-             </div>
+          <div className="p-10 max-w-6xl mx-auto w-full animate-in fade-in">
+            <h1 className="text-3xl font-light text-slate-800 mb-2">Upload Model</h1>
+            <p className="text-slate-500 mb-8">Project: {activeProject}</p>
+            <div className="grid grid-cols-2 gap-12">
+               <div className="border-2 border-dashed border-slate-300 rounded-xl h-80 flex flex-col items-center justify-center text-slate-400 bg-slate-50">
+                  <CloudArrowUpIcon className="w-16 h-16 mb-4"/>
+                  <p>Drag & Drop or click to browse</p>
+                  <p className="text-xs mt-2">(.stl / .obj / .fbx / .step)</p>
+               </div>
+               <div className="space-y-6">
+                 <h3 className="font-bold text-slate-700">Model Metadata</h3>
+                 <div className="grid grid-cols-2 gap-4">
+                    <Field label="Instrument Name" placeholder="e.g. Laparoscopic Grasper"/>
+                    <Field label="Category" placeholder="e.g. Forceps"/>
+                 </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <Field label="Dimensions" placeholder="L x W x Handle Ø"/>
+                    <Field label="Weight" placeholder="g / kg"/>
+                 </div>
+                 <button onClick={() => setCurrentView("simulate")} className="w-full bg-slate-900 text-white py-3 rounded mt-4 hover:bg-slate-800">Continue to Simulation</button>
+               </div>
+            </div>
           </div>
         )}
 
-        {/* === SIMULATION WORKSPACE (The Core) === */}
+        {/* === SIMULATE (Core Interface) === */}
         {currentView === "simulate" && (
-          <div className="flex-1 flex flex-col h-full animate-in fade-in">
+          <div className="flex flex-col h-full animate-in fade-in">
              {/* Header */}
-             <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-10">
-               <div className="flex items-center gap-4">
-                 <h2 className="font-bold text-slate-800">{activeProject}</h2>
-                 <div className="h-4 w-px bg-slate-300"></div>
-                 <button 
-                   onClick={() => { setIsComparing(!isComparing); log(isComparing ? "Comparison Mode: OFF" : "Comparison Mode: ON (Overlay)"); }}
-                   className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-full border transition ${isComparing ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}
-                 >
-                   <ArrowsRightLeftIcon className="w-3 h-3"/> {isComparing ? 'Active Overlay' : 'Compare Baseline'}
-                 </button>
-               </div>
-               <div className="flex items-center gap-3">
-                 <button onClick={() => setIsDynamic(!isDynamic)} className={`text-xs font-bold px-3 py-1 rounded transition ${isDynamic ? 'bg-green-100 text-green-700' : 'text-slate-400 hover:text-slate-600'}`}>
-                   {isDynamic ? "● LIVE PHYSICS" : "○ STATIC VIEW"}
-                 </button>
-               </div>
-             </header>
+             <div className="h-14 border-b border-slate-200 flex items-center px-6 gap-4 justify-between">
+                <div className="flex items-center gap-4">
+                  <button onClick={() => setCurrentView("dashboard")} className="text-slate-500 hover:text-slate-800">← Back</button>
+                  <div className="h-4 w-px bg-slate-300"></div>
+                  <h2 className="font-bold text-slate-700">Simulate & Review</h2>
+                </div>
+                {/* Live Data Badge */}
+                <div className="flex items-center gap-2 text-xs bg-slate-50 px-3 py-1 rounded border border-slate-200 text-slate-500">
+                  <HandRaisedIcon className="w-4 h-4"/>
+                  <span>Subject Model: <strong>{params.handSize === 'S' ? '5th %ile' : params.handSize === 'M' ? '50th %ile' : '95th %ile'}</strong></span>
+                </div>
+             </div>
 
-             {/* 3-Column Layout */}
-             <div className="flex-1 grid grid-cols-12 overflow-hidden">
+             {/* Main Workspace (Split View) */}
+             <div className="flex-1 flex overflow-hidden">
                 
-                {/* 1. CONTROLS (Left) */}
-                <div className="col-span-3 bg-white border-r border-slate-200 p-5 flex flex-col gap-6 overflow-y-auto">
-                   <ControlSection title="Geometry Definition" icon={<AdjustmentsHorizontalIcon/>}>
-                      <SliderControl label="Diameter (mm)" val={params.dia} set={(v) => setParams({...params, dia: v})} min={5} max={45} />
-                      <SliderControl label="Curvature (°)" val={params.curve} set={(v) => setParams({...params, curve: v})} min={0} max={30} />
-                      <SliderControl label="Handle Len (mm)" val={params.length} set={(v) => setParams({...params, length: v})} min={80} max={200} />
-                   </ControlSection>
-
-                   <ControlSection title="Material & Physics" icon={<Square3Stack3DIcon/>}>
-                      <div className="space-y-2">
-                        {Object.entries(MATERIALS).map(([k, m]) => (
-                          <button key={k} onClick={() => { setParams({...params, material: k}); log(`Material changed to: ${m.name}`); }} className={`w-full text-left px-3 py-2 rounded border text-xs font-medium transition ${params.material === k ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
-                            {m.name}
-                          </button>
-                        ))}
-                      </div>
-                   </ControlSection>
-
-                   <ControlSection title="User Parameters" icon={<HandRaisedIcon/>}>
-                      <SliderControl label="Grip Force (N)" val={params.gripForce} set={(v) => setParams({...params, gripForce: v})} min={10} max={100} />
-                      <div className="flex bg-slate-100 rounded p-1 mt-2">
-                         {(['S','M','L'] as const).map(s => (
-                           <button key={s} onClick={() => { setHandSize(s); log(`Hand model set to Size: ${s}`); }} className={`flex-1 text-xs font-bold py-1 rounded transition ${handSize === s ? 'bg-white shadow text-slate-900' : 'text-slate-400'}`}>{s}</button>
-                         ))}
-                      </div>
-                   </ControlSection>
-                </div>
-
-                {/* 2. VISUALIZER (Center) */}
-                <div className="col-span-6 bg-slate-100 relative flex flex-col">
-                   <div className="flex-1 flex items-center justify-center p-8 overflow-hidden relative">
-                      {/* Grid Background */}
-                      <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: 'radial-gradient(#94a3b8 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+                {/* LEFT: 3D Viewer (Sketch 8 Viewer) */}
+                <div className="w-2/3 bg-slate-50 relative flex items-center justify-center border-r border-slate-200 overflow-hidden">
+                   
+                   {/* Tool SVG */}
+                   <svg viewBox="0 0 500 300" className="w-full h-full p-10 drop-shadow-lg transition-all duration-300 ease-out">
+                      {/* Shaft */}
+                      <rect x="50" y="148" width="250" height="4" fill="#64748b" />
+                      <path d="M 50,150 L 20,130" stroke="#64748b" strokeWidth="3" />
+                      <path d="M 50,150 L 20,170" stroke="#64748b" strokeWidth="3" />
                       
-                      <div className="relative w-full h-full flex items-center justify-center">
-                        {/* THE TOOL SVG */}
-                        <svg viewBox="0 0 500 400" className="w-full h-full drop-shadow-2xl">
-                           <defs>
-                             <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
-                               <stop offset="0%" stopColor={params.material === 'polymer' ? '#e2e8f0' : '#94a3b8'} />
-                               <stop offset="100%" stopColor={params.material === 'polymer' ? '#cbd5e1' : '#475569'} />
-                             </linearGradient>
-                             <filter id="glow"><feGaussianBlur stdDeviation="3" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-                           </defs>
-
-                           {/* GHOST OVERLAY (If Comparing) */}
-                           {isComparing && (
-                             <g transform={`translate(300, 200) rotate(${baseline.curve})`} className="opacity-30">
-                               <path d={`M 0,-${baseline.dia/2} L ${baseline.length},-${baseline.dia/2} L ${baseline.length},${baseline.dia/2} L 0,${baseline.dia/2} Z`} fill="none" stroke="#ef4444" strokeWidth="2" strokeDasharray="5,5"/>
-                               <circle cx={baseline.length + 10} cy={-baseline.dia/2} r={baseline.dia} fill="none" stroke="#ef4444" strokeWidth="2" strokeDasharray="5,5"/>
-                               <circle cx={baseline.length + 10} cy={baseline.dia/2} r={baseline.dia} fill="none" stroke="#ef4444" strokeWidth="2" strokeDasharray="5,5"/>
-                             </g>
-                           )}
-
-                           {/* ACTUAL TOOL */}
-                           <g transform="translate(50, 200)">
-                             <rect x="0" y="-4" width={250} height="8" fill="#64748b" rx="2" />
-                             <g transform="translate(0,0)">
-                               <path d="M 0,0 L -35,-15" stroke="#64748b" strokeWidth="4" className={isDynamic ? "animate-[wiggle_0.5s_ease-in-out_infinite]" : ""}/>
-                               <path d="M 0,0 L -35,15" stroke="#64748b" strokeWidth="4" className={isDynamic ? "animate-[wiggle_0.5s_ease-in-out_infinite_reverse]" : ""}/>
-                             </g>
-                           </g>
-
-                           <g transform={`translate(300, 200) rotate(${params.curve})`} className="transition-all duration-300 ease-out">
-                              <rect x="-20" y="-10" width="20" height="20" fill="#475569" />
-                              <path d={`M 0,-${params.dia/2} L ${params.length},-${params.dia/2} L ${params.length},${params.dia/2} L 0,${params.dia/2} Z`} fill="url(#bodyGrad)" stroke="#334155" strokeWidth="1"/>
-                              <circle cx={params.length + 10} cy={-params.dia/2} r={params.dia} fill="none" stroke="url(#bodyGrad)" strokeWidth="6" />
-                              <circle cx={params.length + 10} cy={params.dia/2} r={params.dia} fill="none" stroke="url(#bodyGrad)" strokeWidth="6" />
-                              
-                              {/* SENSOR DOTS (Red if bad) */}
-                              {metrics.pressure > 80 && (
-                                <>
-                                  <circle cx={params.length + 10} cy={-params.dia/2 - params.dia} r="5" fill="#ef4444" filter="url(#glow)" className="animate-pulse"/>
-                                  <circle cx={params.length + 10} cy={params.dia/2 + params.dia} r="5" fill="#ef4444" filter="url(#glow)" className="animate-pulse"/>
-                                </>
-                              )}
-                           </g>
-                        </svg>
+                      {/* Handle Group */}
+                      <g transform={`translate(300, 150) rotate(${params.curve})`} className="transition-all duration-300 ease-out">
+                         {/* Body */}
+                         <path d={`M 0,-10 L 100,-10 L 100,10 L 0,10 Z`} fill="#94a3b8" stroke="#475569" strokeWidth={params.dia/4} />
+                         
+                         {/* GRIP LOOPS - PERMANENT HEATMAP */}
+                         <g>
+                           <circle cx="110" cy="-15" r={params.dia} fill="none" stroke="#475569" strokeWidth="4" />
+                           <circle cx="110" cy="15" r={params.dia} fill="none" stroke="#475569" strokeWidth="4" />
+                           {/* Heatmap Layer */}
+                           <circle cx="110" cy="-15" r={params.dia} fill={getHeatColor(metrics.pressure)} fillOpacity={getHeatOpacity(metrics.pressure)} style={{ mixBlendMode: 'multiply' }} className="transition-colors duration-500"/>
+                           <circle cx="110" cy="15" r={params.dia} fill={getHeatColor(metrics.pressure)} fillOpacity={getHeatOpacity(metrics.pressure)} style={{ mixBlendMode: 'multiply' }} className="transition-colors duration-500"/>
+                         </g>
+                         
+                         {/* Hover Tooltip trigger (Title tag works in SVG) */}
+                         <title>Pressure: {metrics.pressure} kPa</title>
+                      </g>
+                   </svg>
+                   
+                   {/* Heatmap Legend */}
+                   <div className="absolute bottom-4 left-4 bg-white/90 p-2 rounded border border-slate-200 text-[10px] flex items-center gap-2 shadow-sm">
+                      <span className="text-slate-500">Strain:</span>
+                      <div className="flex gap-1">
+                         <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                         <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                         <div className="w-3 h-3 rounded-full bg-red-500"></div>
                       </div>
-
-                      {/* Info Overlay */}
-                      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur border border-slate-200 p-2 rounded text-[10px] font-mono text-slate-500">
-                        <div>Polycount: 12,402</div>
-                        <div>Solver: {isDynamic ? "Running" : "Idle"}</div>
-                      </div>
+                      <span className="text-slate-500">{metrics.pressure} kPa</span>
                    </div>
 
-                   {/* CONSOLE LOG (The Matrix) */}
-                   <div className="h-40 bg-slate-900 text-green-400 p-3 font-mono text-xs overflow-y-auto border-t border-slate-700">
-                      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-800 text-slate-500 uppercase tracking-widest font-bold">
-                        <CommandLineIcon className="w-3 h-3"/> System Console
-                      </div>
-                      <div className="space-y-1">
-                        {consoleLogs.length === 0 && <span className="opacity-50">System ready. Waiting for input...</span>}
-                        {consoleLogs.map((l,i) => <div key={i}>{`> ${l}`}</div>)}
-                        <div ref={logEndRef}></div>
-                      </div>
-                   </div>
+                   {/* Comparison Overlay */}
+                   {showCompare && (
+                     <div className="absolute inset-0 bg-slate-900/10 backdrop-blur-[1px] flex items-center justify-center z-20">
+                        <div className="bg-white p-6 rounded shadow-xl border border-slate-200 max-w-lg w-full">
+                           <div className="flex justify-between items-center mb-4">
+                             <h3 className="font-bold">Before / After Comparison</h3>
+                             <button onClick={() => setShowCompare(false)} className="border px-2 rounded hover:bg-slate-50"><XMarkIcon className="w-4 h-4"/></button>
+                           </div>
+                           <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div className="p-3 bg-red-50 border border-red-100 rounded">
+                                 <strong className="block text-red-600 mb-2">Original</strong>
+                                 <div>Risk Score: 72 (High)</div>
+                                 <div>Handle Ø: 14mm</div>
+                              </div>
+                              <div className="p-3 bg-green-50 border border-green-100 rounded">
+                                 <strong className="block text-green-600 mb-2">Current</strong>
+                                 <div>Risk Score: {100 - metrics.score} (Optimized)</div>
+                                 <div>Handle Ø: {params.dia}mm</div>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                   )}
                 </div>
 
-                {/* 3. ANALYTICS (Right) */}
-                <div className="col-span-3 bg-white border-l border-slate-200 p-6 flex flex-col gap-8 overflow-y-auto">
-                   {/* Radar Chart */}
-                   <div>
-                     <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-6 text-sm">
-                       <ChartBarIcon className="w-4 h-4 text-indigo-600"/> Performance Matrix
-                     </h3>
-                     <div className="relative aspect-square flex items-center justify-center bg-slate-50 rounded-full border border-slate-100">
-                        {/* Simple CSS Radar Visualization */}
-                        <div className="absolute inset-0 border border-slate-200 rounded-full scale-[0.25]"></div>
-                        <div className="absolute inset-0 border border-slate-200 rounded-full scale-[0.50]"></div>
-                        <div className="absolute inset-0 border border-slate-200 rounded-full scale-[0.75]"></div>
-                        <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible opacity-70 mix-blend-multiply">
-                           <polygon 
-                             points={`50,${50 - (metrics.comfort/2.2)} ${50 + (metrics.precision/2.2)},50 50,${50 + (metrics.stability/2.2)} ${50 - (metrics.score/2.2)},50`}
-                             fill="rgba(79, 70, 229, 0.4)" stroke="#4338ca" strokeWidth="2" className="transition-all duration-500"
-                           />
-                        </svg>
-                        <span className="absolute top-2 text-[10px] font-bold text-slate-400">COMFORT</span>
-                        <span className="absolute right-2 text-[10px] font-bold text-slate-400">PRECISION</span>
-                        <span className="absolute bottom-2 text-[10px] font-bold text-slate-400">STABILITY</span>
-                        <span className="absolute left-2 text-[10px] font-bold text-slate-400">SCORE</span>
+                {/* RIGHT: Results Matrix (Sketch 8 + Real Time) */}
+                <div className="w-1/3 bg-white p-6 overflow-y-auto flex flex-col gap-6">
+                   {/* RADAR CHART - ALWAYS ACTIVE */}
+                   <div className="border border-slate-300 rounded p-4 bg-slate-50">
+                      <div className="flex justify-between items-center mb-4">
+                         <h3 className="font-bold text-slate-800">Performance Matrix</h3>
+                         <div className={`font-bold text-xl ${metrics.score > 75 ? 'text-green-600' : 'text-orange-600'}`}>
+                           {metrics.score}/100
+                         </div>
+                      </div>
+                      
+                      <div className="relative aspect-square max-h-48 mx-auto mb-4">
+                         <div className="absolute inset-0 border border-slate-200 rounded-full scale-50"></div>
+                         <div className="absolute inset-0 border border-slate-200 rounded-full"></div>
+                         <div className="absolute inset-0 flex items-center justify-center"><div className="w-full h-px bg-slate-200"></div></div>
+                         <div className="absolute inset-0 flex items-center justify-center"><div className="h-full w-px bg-slate-200"></div></div>
+                         
+                         <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible opacity-70 mix-blend-multiply">
+                            <polygon 
+                              points={`50,${50 - (metrics.comfort/2.2)} ${50 + (metrics.precision/2.2)},50 50,${50 + (metrics.stability/2.2)} ${50 - (metrics.score/2.2)},50`}
+                              fill={metrics.score > 75 ? "rgba(34, 197, 94, 0.4)" : "rgba(249, 115, 22, 0.4)"}
+                              stroke={metrics.score > 75 ? "#16a34a" : "#ea580c"}
+                              strokeWidth="2"
+                              className="transition-all duration-300 ease-linear"
+                            />
+                         </svg>
+                         
+                         <span className="absolute top-0 left-1/2 -translate-x-1/2 -mt-4 text-[10px] font-bold text-slate-500">COMFORT</span>
+                         <span className="absolute bottom-0 left-1/2 -translate-x-1/2 -mb-4 text-[10px] font-bold text-slate-500">STABILITY</span>
+                         <span className="absolute left-0 top-1/2 -translate-y-1/2 -ml-8 text-[10px] font-bold text-slate-500">SCORE</span>
+                         <span className="absolute right-0 top-1/2 -translate-y-1/2 -mr-10 text-[10px] font-bold text-slate-500">PRECISION</span>
+                      </div>
+                   </div>
+
+                   {/* Design Insights */}
+                   <div className="border border-slate-300 rounded p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <InformationCircleIcon className="w-4 h-4 text-sky-500"/>
+                        <h4 className="font-bold text-sm text-slate-700">Live Insights</h4>
+                      </div>
+                      <ul className="list-disc pl-4 text-xs text-slate-600 space-y-2">
+                         <li className={metrics.pressure > 80 ? "text-red-600 font-bold" : ""}>
+                           Pressure: {metrics.pressure} kPa {metrics.pressure > 80 && "(Trauma Risk!)"}
+                         </li>
+                         <li>
+                           Diameter: {params.dia}mm {Math.abs(params.dia - 32) > 5 ? "(Adjust for Hand M)" : "(Optimal)"}
+                         </li>
+                      </ul>
+                   </div>
+
+                   {/* AI Recommendations (Only if score is low) */}
+                   {metrics.score < 80 && (
+                     <div className="border border-slate-300 rounded p-4 bg-sky-50">
+                        <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2"><BeakerIcon className="w-4 h-4"/> AI Auto-Refine</h3>
+                        <div className="space-y-3">
+                           <div className="flex justify-between items-center bg-white p-2 rounded border border-sky-100 shadow-sm">
+                              <div className="text-xs">
+                                <div className="font-bold">Optimize Diameter</div>
+                                <div className="text-slate-500">Target: 32mm</div>
+                              </div>
+                              <button onClick={() => applyAI("dia")} className="text-xs bg-sky-100 hover:bg-sky-200 text-sky-700 px-3 py-1 rounded font-bold transition">Apply</button>
+                           </div>
+                           <button onClick={() => applyAI("all")} className="w-full text-center text-xs font-bold text-sky-700 hover:underline mt-1">Apply All Suggestions</button>
+                        </div>
                      </div>
+                   )}
+                   
+                   {/* Bottom Actions */}
+                   <div className="flex gap-2 mt-auto">
+                      <button onClick={() => setShowCompare(true)} className="flex-1 border border-slate-300 bg-white py-2 text-xs font-bold hover:bg-slate-50">Compare</button>
+                      <button onClick={() => setCurrentView("report")} className="flex-1 border border-slate-300 bg-white py-2 text-xs font-bold hover:bg-slate-50">Export Report</button>
+                   </div>
+                </div>
+             </div>
+
+             {/* BOTTOM CONTROL DECK (Sketch 5) */}
+             <div className="h-48 bg-white border-t border-slate-300 p-6 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] z-10">
+                <div className="flex gap-8 h-full">
+                   {/* Col 1 */}
+                   <div className="flex flex-col justify-between w-1/4">
+                      <div>
+                        <Label>Grip Selection</Label>
+                        <div className="flex gap-2">
+                           <Toggle active={params.gripType === "Power"} onClick={() => setParams({...params, gripType: "Power"})}>Power</Toggle>
+                           <Toggle active={params.gripType === "Pinch"} onClick={() => setParams({...params, gripType: "Pinch"})}>Pinch</Toggle>
+                        </div>
+                      </div>
+                      <div>
+                         <Label>Surgeon Position</Label>
+                         <div className="flex gap-2">
+                           <Toggle active={params.position === "Standing"} onClick={() => setParams({...params, position: "Standing"})}>Stand</Toggle>
+                           <Toggle active={params.position === "Seated"} onClick={() => setParams({...params, position: "Seated"})}>Seat</Toggle>
+                        </div>
+                      </div>
                    </div>
 
-                   {/* Metrics Bars */}
-                   <div className="space-y-4">
-                     <MetricBar label="Contact Pressure (kPa)" value={metrics.pressure} max={120} inverse />
-                     <MetricBar label="Ergonomic Score" value={metrics.score} max={100} />
+                   {/* Col 2 */}
+                   <div className="flex flex-col justify-between w-1/4">
+                      <div>
+                        <Label>Hand Size</Label>
+                        <div className="flex gap-2">
+                           {(['S', 'M', 'L'] as const).map(s => (
+                             <Toggle key={s} active={params.handSize === s} onClick={() => setParams({...params, handSize: s})}>{s}</Toggle>
+                           ))}
+                        </div>
+                      </div>
+                      <div>
+                         <Label>Hand Orientation</Label>
+                         <div className="flex gap-2">
+                           <Toggle active={params.orientation === "Right"} onClick={() => setParams({...params, orientation: "Right"})}>Right</Toggle>
+                           <Toggle active={params.orientation === "Left"} onClick={() => setParams({...params, orientation: "Left"})}>Left</Toggle>
+                        </div>
+                      </div>
                    </div>
 
-                   {/* AI Actions */}
-                   <div className="mt-auto bg-slate-50 p-4 rounded-xl border border-slate-200">
-                      <div className="flex items-center gap-2 mb-3 text-xs font-bold text-slate-700 uppercase">
-                        <BeakerIcon className="w-4 h-4 text-purple-600"/> AI Solver
+                   {/* Col 3: Real-Time Sliders */}
+                   <div className="flex flex-col justify-between w-1/3 border-l border-slate-200 pl-8">
+                      <div className="space-y-4">
+                         <div>
+                            <div className="flex justify-between"><Label>Handle Ø (mm)</Label> <span className="text-xs border px-1 bg-slate-50 font-mono">{params.dia}</span></div>
+                            <input type="range" min={5} max={45} value={params.dia} onChange={(e) => setParams({...params, dia: Number(e.target.value)})} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-900"/>
+                         </div>
+                         <div>
+                            <div className="flex justify-between"><Label>Curvature (°)</Label> <span className="text-xs border px-1 bg-slate-50 font-mono">{params.curve}</span></div>
+                            <input type="range" min={0} max={30} value={params.curve} onChange={(e) => setParams({...params, curve: Number(e.target.value)})} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-900"/>
+                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
-                         <button onClick={() => runAISolver('balanced')} className="py-2 bg-white border border-slate-200 hover:border-purple-400 text-slate-600 text-xs font-bold rounded shadow-sm hover:text-purple-600 transition">Balanced</button>
-                         <button onClick={() => runAISolver('precision')} className="py-2 bg-white border border-slate-200 hover:border-indigo-400 text-slate-600 text-xs font-bold rounded shadow-sm hover:text-indigo-600 transition">Precision</button>
-                      </div>
+                   </div>
+
+                   {/* Col 4: Run Button */}
+                   <div className="flex items-end flex-1">
+                      <button 
+                        onClick={handleRunSimulation}
+                        disabled={simStatus === "loading"}
+                        className="w-full h-12 bg-white border-2 border-slate-800 text-slate-800 font-bold hover:bg-slate-800 hover:text-white transition disabled:opacity-50"
+                      >
+                         {simStatus === "loading" ? "Analyzing..." : simStatus === "idle" ? "Initialize Sim" : "Update Model"}
+                      </button>
                    </div>
                 </div>
              </div>
           </div>
         )}
 
-        {/* === REPORT === */}
+        {/* === REPORT VIEW (Sketch 11) === */}
         {currentView === "report" && (
-           <div className="flex-1 overflow-y-auto bg-slate-200 p-8 flex justify-center animate-in slide-in-from-bottom-4">
-              <div className="bg-white shadow-2xl w-full max-w-4xl p-12 min-h-[800px] relative">
-                 <div className="absolute top-0 left-0 w-full h-2 bg-indigo-600"></div>
-                 <div className="flex justify-between items-end border-b-2 border-slate-100 pb-8 mb-8">
-                    <div>
-                      <h1 className="text-4xl font-bold text-slate-900 mb-2">Technical Analysis Report</h1>
-                      <div className="text-slate-500 font-mono text-sm">REF: {Math.floor(Math.random() * 100000)}</div>
-                    </div>
-                    <div className="text-right">
-                       <div className="text-sm font-bold text-slate-900">Project: {activeProject}</div>
-                       <div className="text-xs text-slate-500">{new Date().toLocaleDateString()}</div>
-                    </div>
-                 </div>
-
-                 <div className="grid grid-cols-3 gap-8 mb-12">
-                    <div className="col-span-2 space-y-4">
-                       <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-2">Configuration Data</h3>
-                       <ReportRow label="Handle Diameter" value={`${params.dia} mm`} />
-                       <ReportRow label="Shaft Curvature" value={`${params.curve}°`} />
-                       <ReportRow label="Material Spec" value={MATERIALS[params.material as keyof typeof MATERIALS].name} />
-                       <ReportRow label="Handle Length" value={`${params.length} mm`} />
-                    </div>
-                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-center">
-                       <div className="text-sm font-bold text-slate-500 uppercase mb-2">Validation Score</div>
-                       <div className={`text-6xl font-black mb-2 ${metrics.score > 80 ? 'text-green-500' : 'text-yellow-500'}`}>{metrics.score}</div>
-                       <div className="text-xs text-slate-400">OUT OF 100</div>
-                    </div>
-                 </div>
-
-                 <div className="mb-12">
-                   <h3 className="font-bold text-slate-800 mb-4">Engineering Notes</h3>
-                   <div className="p-6 bg-indigo-50 text-indigo-900 text-sm leading-relaxed rounded-lg border border-indigo-100">
-                      Based on biomechanical simulation, the optimized geometry of <strong>{params.dia}mm</strong> diameter provides the ideal balance between tactile feedback and muscle fatigue reduction. 
-                      The material selection of <strong>{MATERIALS[params.material as keyof typeof MATERIALS].name}</strong> ensures adequate friction (µ={MATERIALS[params.material as keyof typeof MATERIALS].friction}) 
-                      to minimize grip force requirements.
+          <div className="p-10 max-w-5xl mx-auto w-full animate-in slide-in-from-bottom-4 bg-white min-h-full border border-slate-200 shadow-xl m-8">
+             <div className="flex justify-between border-b border-slate-300 pb-4 mb-8">
+                <button onClick={() => setCurrentView("simulate")} className="text-slate-500 border px-3 py-1 hover:bg-slate-50">← Back</button>
+                <div className="text-center"><h1 className="text-xl font-bold text-slate-800">Report - {activeProject}</h1></div>
+                <div className="text-right text-sm text-slate-500">21 Oct 2025</div>
+             </div>
+             <div className="border border-slate-400 p-6 mb-8">
+                <div className="mb-4 flex justify-between">
+                  <div>
+                    <div>Hand Size: <strong>{params.handSize}</strong></div>
+                    <div>Grip Type: <strong>{params.gripType}</strong></div>
+                  </div>
+                  <div className="text-right">
+                    <div>Validation Score: <strong className={metrics.score > 80 ? "text-green-600" : "text-orange-600"}>{metrics.score}/100</strong></div>
+                    <div>Status: <strong>{metrics.score > 80 ? "PASS" : "REVIEW NEEDED"}</strong></div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-8 border-t border-slate-300 pt-4">
+                   <div>
+                      <h3 className="font-bold mb-2">Ergonomic Analysis</h3>
+                      <ul className="list-disc pl-5 text-sm space-y-1 mb-4">
+                         <li>Comfort Index: {metrics.comfort.toFixed(0)}/100</li>
+                         <li>Precision Index: {metrics.precision.toFixed(0)}/100</li>
+                         <li>Calculated Pressure: {metrics.pressure} kPa</li>
+                      </ul>
                    </div>
-                 </div>
-
-                 <div className="flex justify-end">
-                    <button onClick={() => log("Report PDF generated.")} className="bg-slate-900 text-white px-8 py-3 rounded font-bold hover:bg-slate-800 flex items-center gap-2">
-                       <ArrowDownTrayIcon className="w-5 h-5"/> Export PDF
-                    </button>
-                 </div>
-              </div>
-           </div>
+                   <div>
+                      <h3 className="font-bold mb-2">Refinements Applied</h3>
+                      <ul className="list-disc pl-5 text-sm space-y-1 mt-1">
+                         <li>Handle Diameter adjusted to {params.dia}mm.</li>
+                         <li>Curvature set to {params.curve}°.</li>
+                         <li>Material friction verified for {params.gripType} grip.</li>
+                      </ul>
+                   </div>
+                </div>
+             </div>
+             <div className="flex justify-end"><button className="border border-slate-400 px-6 py-2 text-sm font-bold hover:bg-slate-50">Download JSON</button></div>
+          </div>
         )}
 
       </main>
+
+      {/* --- LOADING OVERLAY --- */}
+      {simStatus === "loading" && (
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+           <div className="bg-white p-8 border border-slate-300 shadow-xl rounded max-w-sm w-full text-center">
+              <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin mx-auto mb-6"></div>
+              <h2 className="text-xl font-light text-slate-800 mb-2">Running Simulation</h2>
+              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200"><div className="bg-slate-400 h-full w-1/2 animate-pulse"></div></div>
+              <p className="mt-2 text-slate-500 text-sm">Processing Biomechanics...</p>
+           </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// --- SUB COMPONENTS ---
+// --- SUB-COMPONENTS ---
+interface SidebarItemProps {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}
 
-const NavIcon = ({ icon, active, onClick }: any) => (
-  <button onClick={onClick} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-slate-500 hover:bg-slate-800 hover:text-slate-300'}`}>
-    <div className="w-5 h-5">{icon}</div>
-  </button>
-);
+function SidebarItem({ icon, label, active, onClick }: SidebarItemProps) {
+  return <button onClick={onClick} className={`w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors ${active ? "text-slate-900 font-bold border-l-2 border-slate-900 bg-slate-50" : "text-slate-500 hover:text-slate-900"}`}>{icon}{label}</button>;
+}
 
-const StatCard = ({ label, value, icon }: any) => (
-  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-    <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center">{icon}</div>
-    <div>
-       <div className="text-2xl font-bold text-slate-900">{value}</div>
-       <div className="text-sm text-slate-500 font-medium">{label}</div>
-    </div>
-  </div>
-);
+interface ProjectCardProps {
+  name: string;
+  date: string;
+  risk: string;
+  issue: string;
+  onClick: () => void;
+}
 
-const ControlSection = ({ title, icon, children }: any) => {
-  const [open, setOpen] = useState(true);
-  return (
-    <div className="border border-slate-200 rounded-lg overflow-hidden shrink-0">
-      <button onClick={() => setOpen(!open)} className="w-full bg-slate-50 p-3 flex items-center justify-between hover:bg-slate-100 transition">
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase">
-          <div className="w-4 h-4 text-slate-400">{icon}</div>{title}
-        </div>
-        <ChevronDownIcon className={`w-3 h-3 text-slate-400 transition ${open ? 'rotate-180' : ''}`}/>
-      </button>
-      {open && <div className="p-4 bg-white space-y-4">{children}</div>}
-    </div>
-  );
-};
+function ProjectCard({ name, date, risk, issue, onClick }: ProjectCardProps) {
+  return <div onClick={onClick} className="border border-slate-300 p-4 cursor-pointer hover:shadow-md transition bg-white"><div className="flex items-center gap-2 mb-2"><DocumentTextIcon className="w-5 h-5 text-slate-400"/><span className="font-bold text-slate-800">{name}</span><span className="text-xs text-slate-400 ml-auto">{date}</span></div><div className="text-sm space-y-1"><div>• Risk: <span className={risk === "Medium" ? "text-orange-600 font-bold" : "text-green-600 font-bold"}>{risk}</span></div><div className="text-slate-600">• {issue}</div></div><div className="mt-4 text-right"><span className="border border-slate-300 px-3 py-1 text-xs hover:bg-slate-50">Open</span></div></div>;
+}
 
-const SliderControl = ({ label, val, set, min, max }: any) => (
-  <div>
-    <div className="flex justify-between mb-1">
-      <label className="text-xs font-medium text-slate-500">{label}</label>
-      <span className="font-mono text-xs font-bold text-slate-700">{val}</span>
-    </div>
-    <input type="range" min={min} max={max} value={val} onChange={(e) => set(Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600 hover:accent-indigo-500"/>
-  </div>
-);
+interface FieldProps {
+  label: string;
+  placeholder: string;
+}
 
-const MetricBar = ({ label, value, max, inverse }: any) => {
-  const pct = Math.min(100, (value/max)*100);
-  let color = 'bg-indigo-500';
-  if (inverse) color = pct > 80 ? 'bg-red-500' : pct > 50 ? 'bg-orange-400' : 'bg-green-500';
-  else color = pct < 50 ? 'bg-red-500' : pct < 80 ? 'bg-yellow-400' : 'bg-green-500';
+function Field({ label, placeholder }: FieldProps) {
+  return <div><label className="block text-sm font-bold text-slate-700 mb-1">{label}</label><input type="text" placeholder={placeholder} className="w-full border border-slate-300 px-3 py-2 text-sm rounded"/></div>;
+}
 
-  return (
-    <div>
-      <div className="flex justify-between text-xs mb-1"><span className="text-slate-500 font-medium">{label}</span><span className="font-bold text-slate-700">{value}</span></div>
-      <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden"><div className={`h-full transition-all duration-500 ${color}`} style={{ width: `${pct}%` }}></div></div>
-    </div>
-  );
-};
+interface LabelProps {
+  children: React.ReactNode;
+}
 
-const ReportRow = ({ label, value }: any) => (
-  <div className="flex justify-between py-2 border-b border-slate-50 text-sm">
-    <span className="text-slate-500">{label}</span>
-    <span className="font-bold text-slate-900">{value}</span>
-  </div>
-);
+function Label({ children }: LabelProps) {
+  return <span className="block text-xs font-bold text-slate-500 uppercase mb-2">{children}</span>;
+}
+
+interface ToggleProps {
+  active: boolean;
+  children: React.ReactNode;
+  onClick: () => void;
+}
+
+function Toggle({ active, children, onClick }: ToggleProps) {
+  return <button onClick={onClick} className={`border px-3 py-1 text-sm ${active ? "border-slate-800 font-bold bg-white" : "border-slate-300 text-slate-500 bg-slate-50"}`}>{children}</button>;
+}
