@@ -293,7 +293,7 @@ export default function PrototypePage() {
                       <div className="flex justify-between items-center mb-4">
                          <h3 className="font-bold text-slate-800">Performance Matrix</h3>
                          <div className={`font-bold text-xl ${metrics.score > 75 ? 'text-green-600' : 'text-orange-600'}`}>
-                           {metrics.score}/100
+                           {metrics.score.toFixed(2)}/100
                          </div>
                       </div>
                       
@@ -328,11 +328,14 @@ export default function PrototypePage() {
                       </div>
                       <ul className="list-disc pl-4 text-xs text-slate-600 space-y-2">
                          <li className={metrics.pressure > 80 ? "text-red-600 font-bold" : ""}>
-                           Pressure: {metrics.pressure} kPa {metrics.pressure > 80 && "(Trauma Risk!)"}
+                           Pressure: {metrics.pressure.toFixed(2)} kPa {metrics.pressure > 80 && "(Trauma Risk!)"}
                          </li>
                          <li>
                            Diameter: {params.dia}mm {Math.abs(params.dia - 32) > 5 ? "(Adjust for Hand M)" : "(Optimal)"}
                          </li>
+                         <li>Comfort: {metrics.comfort.toFixed(2)}/100</li>
+                         <li>Precision: {metrics.precision.toFixed(2)}/100</li>
+                         <li>Stability: {metrics.stability.toFixed(2)}/100</li>
                       </ul>
                    </div>
 
