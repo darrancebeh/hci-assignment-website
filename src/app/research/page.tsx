@@ -28,7 +28,7 @@ export default function ResearchPage() {
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold mb-4 text-slate-900">Research Methodology</h1>
           <p className="text-slate-500 max-w-2xl mx-auto leading-relaxed">
-            Our iterative process followed the <strong>"Double Diamond"</strong> design approach: 
+            Our iterative process followed the <strong>&quot;Double Diamond&quot;</strong> design approach: 
             Discovering user needs, Defining the problem, Developing solutions, and Delivering the final prototype.
           </p>
         </div>
