@@ -74,7 +74,7 @@ export default function Home() {
               <div className="aspect-video bg-slate-900 rounded-2xl shadow-2xl overflow-hidden relative group">
                 <iframe 
                   className="w-full h-full"
-                  src="https://www.youtube.com/embed/dQw4w9WgXcQ?mute=1" 
+                  src="https://www.youtube.com/embed/6cKWT9kvE70" 
                   title="Project Demo"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
