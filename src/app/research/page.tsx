@@ -32,19 +32,19 @@ export default function ResearchPage() {
           <div className="grid md:grid-cols-3 gap-6">
             <figure className="space-y-2">
               <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-                <img src="images/fig1.png" alt="Dashboard Sketch" className="w-full h-auto"/>
+                <img src="/images/fig1.png" alt="Dashboard Sketch" className="w-full h-auto"/>
               </div>
               <figcaption className="text-xs text-slate-500 text-center italic">Fig 1: Initial Dashboard</figcaption>
             </figure>
             <figure className="space-y-2">
               <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-                <img src="images/fig2.png" alt="Upload Sketch" className="w-full h-auto"/>
+                <img src="/images/fig2.png" alt="Upload Sketch" className="w-full h-auto"/>
               </div>
               <figcaption className="text-xs text-slate-500 text-center italic">Fig 2: Initial Upload Screen</figcaption>
             </figure>
             <figure className="space-y-2">
               <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-                <img src="images/fig3.png" alt="Simulation Sketch" className="w-full h-auto"/>
+                <img src="/images/fig3.png" alt="Simulation Sketch" className="w-full h-auto"/>
               </div>
               <figcaption className="text-xs text-slate-500 text-center italic">Fig 3: Simulation Configuration</figcaption>
             </figure>
@@ -65,7 +65,7 @@ export default function ResearchPage() {
               their high technical literacy made them suitable for validating the software interaction flow.
             </p>
             <div className="grid grid-cols-3 gap-4">
-               <img src="images/fig4.png" alt="Testing Session 1" className="rounded-lg border border-slate-100"/>
+               <img src="/images/fig4.png" alt="Testing Session 1" className="rounded-lg border border-slate-100"/>
                {/* Note: Assuming fig5 contains the testing photos collage as per your report */}
             </div>
             <p className="text-xs text-slate-400 mt-2 italic">Fig 4: Usability testing sessions conducted in-person.</p>
@@ -122,7 +122,7 @@ export default function ResearchPage() {
             We pivoted from a &quot;Human Hand&quot; visualization to a &quot;Performance Matrix&quot; (Radar Chart) to reduce visual clutter and provide clearer engineering data.
           </p>
           <div className="border border-slate-200 rounded-xl overflow-hidden shadow-lg">
-             <img src="images/fig5.png" alt="Final Digital Mockup" className="w-full h-auto"/>
+             <img src="/images/fig5.png" alt="Final Digital Mockup" className="w-full h-auto"/>
           </div>
           <p className="text-sm text-slate-500 mt-2 text-center">Fig 5: The final simulation workspace featuring the Real-Time Matrix and Control Deck.</p>
         </section>
