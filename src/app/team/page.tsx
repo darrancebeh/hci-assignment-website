@@ -20,7 +20,7 @@ export default function TeamPage() {
       name: "Darrance Beh Heng Shek", 
       id: "23094907", 
       role: "Lead Developer & Architect", 
-      image: "/images/darrance.jpeg",
+      image: "/images/darrance.png",
       contribution: "(25%) Architected the full-stack Next.js application and the custom SVG vector manipulation engine. Engineered the client-side physics logic that translates slider inputs into real-time biomechanical risk metrics and the dynamic 'Matrix' visualization."
     },
     { 
