@@ -11,7 +11,7 @@ export default function Home() {
       <section className="relative pt-24 pb-32 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 text-center relative z-10">
           <span className="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-sm font-medium text-sky-600 mb-6 border border-sky-100">
-            HCI Project 2025 • Group 4-10
+            HCI Assignment • Practical Group 10, Group 4
           </span>
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-6">
             Refining Surgical Instruments with <br/>
