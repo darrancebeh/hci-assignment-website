@@ -40,21 +40,23 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ABSTRACT (Problem & Solution Overview) */}
+      {/* ABSTRACT */}
       <section id="abstract" className="py-24 bg-slate-50 border-y border-slate-200 scroll-mt-16">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-10">
             <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Project Overview</h2>
-            <h3 className="text-3xl font-bold text-slate-900 mt-2">Problem & Solution</h3>
+            <h3 className="text-3xl font-bold text-slate-900 mt-2">Abstract</h3>
           </div>
           
           <div className="bg-white p-10 rounded-2xl shadow-sm border border-slate-200 prose prose-lg text-slate-700 leading-relaxed">
             <p>
-              <strong>The Problem:</strong> Work-Related Musculoskeletal Disorders (WMSDs) represent a systemic crisis in modern healthcare, affecting <strong>35% to 60% of surgeons</strong>. This occupational hazard is driven largely by reliance on instruments with poor micro-ergonomics, such as traditional laparoscopic pinch-grip handles known to induce hand paraesthesia. While the industry uses risk standards like RULA and REBA, these are <em>reactive</em> interventions that train surgeons to adapt to poor tools rather than addressing root design flaws.
+              This project is designed for the tool designers to refine the surgical instruments from ergonomic issues before they are used by the surgeons. Surgeons often experience physical strain in hands and wrist during long surgical procedures. A significant number of surgeons face ergonomic issues or injury due to inadequate designed surgical instruments such as poor grip design, improper weight distribution and repetitive motion stress, which causes hand and wrist pain, reducing surgical performance and increasing long-term injury risk. To solve this, the project integrates AI-driven simulation and analysis to identify possible ergonomic issues in surgical instruments. The objective is to provide tool designers recommendations that allow them to refine instruments and increase the efficiency in designing the tool.
             </p>
-            <hr className="my-6 border-slate-100"/>
             <p>
-              <strong>The Solution:</strong> To bridge the gap between reactive training and the prohibitive costs of late-stage physical prototyping, we propose <strong>ErgoSurgAI</strong>. This predictive design evaluation platform empowers medical tool engineers to upload 3D CAD models and simulate interactions against virtual hand populations. By providing quantitative risk assessments, visualizing pressure points via heatmaps, and offering generative AI-driven geometry recommendations, ErgoSurgAI shifts the ergonomic workflow from physical trial-and-error to <strong>proactive digital validation</strong>.
+              This project involves conducting user research with surgeons to identify the common ergonomic issues, heuristic testing with a user to identify the usability issues based on established design principles and usability testing conducted with other three users to interact with the prototype while simulating the role of tool designers. This iterative process ensured the prototype is user-friendly and provide balanced practical insights with AI-driven recommendations. The initial prototype was found to be nearly complete since users could effectively navigate it while imagining themselves as tool designers. Feedback provided and used to refine the prototype to ensure it aligns with real-world design needs.
+            </p>
+            <p>
+              By solving the ergonomics in surgical instruments, this project contributes to surgeons&apos; long-term health and enhance surgical performance. Better surgical tools help surgeons to reduce fatigue, minimize injury risks and support higher precision in operation. Overall, it benefits the patients, hospitals and the healthcare system.
             </p>
           </div>
         </div>
