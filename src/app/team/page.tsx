@@ -6,29 +6,29 @@ export default function TeamPage() {
       name: "Chai Yi Xiang", 
       id: "22042493", 
       role: "Interaction Designer",
-      image: "/images/yixiang.png", 
-      contribution: "Defined the project title and problem scope. Assigned team roles and prepared the usability test scripts and scenarios. Designed the high-fidelity UI assets, specifically the 'Industrial Control Deck' aesthetic and the A0 Poster layout."
+      image: "/images/cyx.jpeg", 
+      contribution: "(25%) Defined the project title and problem scope. Assigned team roles and prepared the usability test scripts and scenarios. Designed the high-fidelity UI assets, specifically the 'Industrial Control Deck' aesthetic and the A0 Poster layout."
     },
     { 
       name: "Chua Kay Chun", 
       id: "23046782", 
       role: "UX Researcher", 
-      image: "/images/kaychun.png",
-      contribution: "Directed the qualitative research phase. Conducted the three usability testing sessions, documented critical incidents (e.g., Upload Ambiguity), and refined the paper prototype based on participant feedback regarding system visibility."
+      image: "/images/ckc.jpeg",
+      contribution: "(25%)Directed the qualitative research phase. Conducted the three usability testing sessions, documented critical incidents (e.g., Upload Ambiguity), and refined the paper prototype based on participant feedback regarding system visibility."
     },
     { 
       name: "Darrance Beh Heng Shek", 
       id: "23094907", 
       role: "Lead Developer & Architect", 
       image: "/images/darrance.png",
-      contribution: "Architected the full-stack Next.js application and the custom SVG vector manipulation engine. Engineered the client-side physics logic that translates slider inputs into real-time biomechanical risk metrics and the dynamic 'Matrix' visualization."
+      contribution: "(25%) Architected the full-stack Next.js application and the custom SVG vector manipulation engine. Engineered the client-side physics logic that translates slider inputs into real-time biomechanical risk metrics and the dynamic 'Matrix' visualization."
     },
     { 
       name: "Ng Wei Quan", 
       id: "22062616", 
       role: "Domain Analyst & Logic Architect", 
-      image: "/images/weiquan.png",
-      contribution: "Synthesized ISO-9241 ergonomic standards into programmable algorithms. Defined the mathematical relationships between anthropometric data and tool geometry to ensure engineering validity in the simulation logic."
+      image: "/images/nwq.jpeg",
+      contribution: "(25%) Synthesized ISO-9241 ergonomic standards into programmable algorithms. Defined the mathematical relationships between anthropometric data and tool geometry to ensure engineering validity in the simulation logic."
     },
   ];
 
