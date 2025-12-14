@@ -14,14 +14,13 @@ export default function Home() {
             HCI Project 2025 • Group 4-10
           </span>
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-6">
-            Surgical Precision.<br/>
+            Refining Surgical Instruments with <br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 to-indigo-600">
-              Designed by AI.
+              AI-Driven Ergonomics.
             </span>
           </h1>
           <p className="mt-4 text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed">
-            A predictive biomechanical simulation framework for medical device engineering.
-            Optimizing surgical tools before physical production.
+            Empowering tool designers to identify ergonomic risks before production. Reduce surgeon fatigue, minimize injury, and enhance surgical precision through simulation.
           </p>
           <div className="flex justify-center gap-4">
             <Link href="/prototypes" className="flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white px-8 py-4 rounded-xl text-lg font-bold transition shadow-xl hover:-translate-y-1">

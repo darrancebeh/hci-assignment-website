@@ -5,30 +5,30 @@ export default function TeamPage() {
     { 
       name: "Chai Yi Xiang", 
       id: "22042493", 
-      role: "Interaction Designer",
+      role: "Research Lead",
       image: "/images/cyx.jpeg", 
-      contribution: "(25%) Defined the project title and problem scope. Assigned team roles and prepared the usability test scripts and scenarios. Designed the high-fidelity UI assets, specifically the 'Industrial Control Deck' aesthetic and the A0 Poster layout."
+      contribution: "(25%) Defined the project title and problem scope. Assigned team roles and prepared the usability test scripts and scenarios."
     },
     { 
       name: "Chua Kay Chun", 
       id: "23046782", 
-      role: "UX Researcher", 
+      role: "UX Designer", 
       image: "/images/ckc.jpeg",
-      contribution: "(25%)Directed the qualitative research phase. Conducted the three usability testing sessions, documented critical incidents (e.g., Upload Ambiguity), and refined the paper prototype based on participant feedback regarding system visibility."
+      contribution: "(25%) Conducted the three usability testing sessions. Created and refined the paper prototype based on participant feedback."
     },
     { 
       name: "Darrance Beh Heng Shek", 
       id: "23094907", 
-      role: "Lead Developer & Architect", 
+      role: "Lead Developer", 
       image: "/images/darrance.png",
-      contribution: "(25%) Architected the full-stack Next.js application and the custom SVG vector manipulation engine. Engineered the client-side physics logic that translates slider inputs into real-time biomechanical risk metrics and the dynamic 'Matrix' visualization."
+      contribution: "(25%) Developed the digital prototype and project website. Organized team meetings and coordinated project workflow."
     },
     { 
       name: "Ng Wei Quan", 
       id: "22062616", 
-      role: "Domain Analyst & Logic Architect", 
+      role: "Design Engineer", 
       image: "/images/nwq.jpeg",
-      contribution: "(25%) Synthesized ISO-9241 ergonomic standards into programmable algorithms. Defined the mathematical relationships between anthropometric data and tool geometry to ensure engineering validity in the simulation logic."
+      contribution: "(25%) Implemented the initial digital prototype and designed the A0 poster layout."
     },
   ];
 
