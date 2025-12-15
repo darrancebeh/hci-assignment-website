@@ -81,32 +81,47 @@ export default function ResearchPage() {
           
           <div className="space-y-6">
             {/* Issue 1 */}
-            <div className="border-l-4 border-red-500 bg-red-50 p-6 rounded-r-xl">
-              <h3 className="font-bold text-red-700 text-lg mb-2">Issue 1: Invisible System Status (Severity: High)</h3>
-              <p className="text-slate-700 mb-4">
-                Participants were unsure if the simulation was processing or frozen after clicking &quot;Run&quot;. 
-                This violated the <em>Visibility of System Status</em> heuristic.
+            <div className="border-l-4 border-orange-500 bg-orange-50 p-6 rounded-r-xl">
+              <h3 className="font-bold text-orange-700 text-lg mb-2">1. Ambiguity in File Upload Requirements (Severity: 2)</h3>
+              <p className="text-slate-700 mb-2">
+                In the initial prototype, the upload box was generic. Participants were unsure which 3D file formats were compatible, asking &quot;What files does this accept?&quot;
               </p>
-              
+              <p className="text-slate-700">
+                <strong>Fix:</strong> We added explicit instructional text to the upload area specifying <em>&quot;Suggested file types: .stl, .obj, .fbx, .step&quot;</em>.
+              </p>
             </div>
 
             {/* Issue 2 */}
-            <div className="border-l-4 border-orange-500 bg-orange-50 p-6 rounded-r-xl">
-              <h3 className="font-bold text-orange-700 text-lg mb-2">Issue 2: Upload Ambiguity (Severity: Medium)</h3>
+            <div className="border-l-4 border-red-500 bg-red-50 p-6 rounded-r-xl">
+              <h3 className="font-bold text-red-700 text-lg mb-2">2. Invisible System Status (Severity: 3)</h3>
+              <p className="text-slate-700 mb-2">
+                During the &quot;Simulation&quot; phase, participants were unsure if the system was frozen or actually working, as there was no feedback after clicking &quot;Run.&quot;
+              </p>
               <p className="text-slate-700">
-                The generic upload box confused users regarding file compatibility. 
-                <strong><br/>Fix:</strong> We added explicit instruction text: <em>&quot;Suggested file types: .stl, .obj, .fbx, .step&quot;</em>.
+                <strong>Fix:</strong> We introduced a real-time loading and analysis progress indicator to adhere to the &quot;Visibility of System Status&quot; heuristic.
               </p>
             </div>
 
             {/* Issue 3 */}
-            <div className="border-l-4 border-sky-500 bg-sky-50 p-6 rounded-r-xl">
-              <h3 className="font-bold text-sky-700 text-lg mb-2">Issue 3: Lack of Comparative Context</h3>
-              <p className="text-slate-700 mb-4">
-                Users struggled to quantify the improvement of their design changes.
-                <strong><br/>Fix:</strong> We implemented a &quot;Before/After Comparison&quot; modal in the final prototype.
+            <div className="border-l-4 border-rose-500 bg-rose-50 p-6 rounded-r-xl">
+              <h3 className="font-bold text-rose-700 text-lg mb-2">3. Cluttered Information (Severity: 4)</h3>
+              <p className="text-slate-700 mb-2">
+                The initial report and dashboard were text-heavy and disorganized, making it difficult to scan for &quot;High Risk&quot; items quickly.
               </p>
-              
+              <p className="text-slate-700">
+                <strong>Fix:</strong> We reorganized the information hierarchy to group related data (e.g., separating &quot;Identified Issues&quot; from &quot;Usage Guide&quot;).
+              </p>
+            </div>
+
+            {/* Issue 4 */}
+            <div className="border-l-4 border-amber-500 bg-amber-50 p-6 rounded-r-xl">
+              <h3 className="font-bold text-amber-700 text-lg mb-2">4. Lack of Visual Context (Severity: 3)</h3>
+              <p className="text-slate-700 mb-2">
+                Users struggled to visualize where the ergonomic issues were occurring on the tool.
+              </p>
+              <p className="text-slate-700">
+                <strong>Fix:</strong> We proposed adding a human model visualization to the paper prototype to mimic real ergonomic issues.
+              </p>
             </div>
           </div>
         </section>
